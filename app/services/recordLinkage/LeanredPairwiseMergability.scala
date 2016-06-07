@@ -84,7 +84,7 @@ object LeanredPairwiseMergability {
     val conn = db.getConnection()
     var lst = List[(Publication, Publication, Boolean)]()
     try {
-      val stmt = conn.prepareStatement("SELECT title1,authors1,publisher1,year1,affiliation1,citation1,title2,authors2,publisher2,year2,affiliation2,citation2,mergable FROM publication_linkage")
+      val stmt = conn.prepareStatement("SELECT title1,authors1,publisher1,year1,affiliation1,citation1,title2,authors2,publisher2,year2,affiliation2,citation2,mergable FROM publication_linkage;")
       val rs = stmt.executeQuery()
       while (rs.next()) {
         lst ::= (Publication(
@@ -286,7 +286,7 @@ object LeanredPairwiseMergability {
     val conn = db.getConnection()
     var lst = List[(Grant, Grant, Boolean)]()
     try {
-      val stmt = conn.prepareStatement("SELECT TITLE1, INVESTIGATOR1, AFFILIATION1, AGENCY1, YEAR1, AMOUNT1, TITLE2, INVESTIGATOR2, AFFILIATION2, AGENCY2, YEAR2, AMOUNT2, MERGABLE FROM grant_linkage")
+      val stmt = conn.prepareStatement("SELECT TITLE1, INVESTIGATOR1, AFFILIATION1, AGENCY1, YEAR1, AMOUNT1, TITLE2, INVESTIGATOR2, AFFILIATION2, AGENCY2, YEAR2, AMOUNT2, MERGABLE FROM grant_linkage;")
       val rs = stmt.executeQuery()
       while (rs.next()) {
         lst ::= (Grant(

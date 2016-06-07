@@ -71,7 +71,7 @@ object BinaryClassification {
     val conn = db.getConnection()
     var lst = List[(Publication, Boolean)]()
     try {
-      val stmt = conn.prepareStatement("SELECT title,authors,publisher,year,affiliation,citation,relevant FROM publication_relevance WHERE name_searched = ? AND affiliation_searched = ?")
+      val stmt = conn.prepareStatement("SELECT title,authors,publisher,year,affiliation,citation,relevant FROM publication_relevance WHERE name_searched = ? AND affiliation_searched = ?;")
       stmt.setString(1, search.name)
       stmt.setString(2, search.affiliation)
       val rs = stmt.executeQuery()
@@ -198,7 +198,7 @@ object BinaryClassification {
     val conn = db.getConnection()
     var lst = List[(Grant, Boolean)]()
     try {
-      val stmt = conn.prepareStatement("SELECT title,investigator,affiliation,agency,year,amount,relevant FROM grant_relevance WHERE name_searched = ? AND affiliation_searched = ?")
+      val stmt = conn.prepareStatement("SELECT title,investigator,affiliation,agency,year,amount,relevant FROM grant_relevance WHERE name_searched = ? AND affiliation_searched = ?;")
       stmt.setString(1, search.name)
       stmt.setString(2, search.affiliation)
       val rs = stmt.executeQuery()

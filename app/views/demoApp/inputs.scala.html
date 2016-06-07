@@ -1,0 +1,22 @@
+@import models.Search
+
+@(searchForm : Form[Search])(implicit messages: Messages)
+
+<div class="jumbotron">
+    <div class="container">
+        <form class="form-horizontal" id="inputForm" method="post" action=@routes.DemoController.search()>
+            <div class="col-xs-4">
+                <input type="text" class="form-control" name="name" id="nameInput" placeholder="Name" value="@searchForm("name").value">
+            </div>
+            <div class="col-xs-4">
+                <input type="text" class="form-control" name="affiliation" id="affiliationInput" placeholder="Affiliation" value="@searchForm("affiliation").value">
+            </div>
+            <input id="isSearch" name="srch" style="display:none" value=@false>
+            <input id="isRefine" name="srch" style="display:none" value=@false>
+            <button id="searchButton" class="btn btn-primary col-xs-2">Search</button>
+            <button id="refineButton" class="btn btn-success col-xs-2">Refine</button>
+        </form>
+    </div>
+    <script src="@routes.Assets.versioned("js/fixedSrcs.js")"></script>
+</div>
+

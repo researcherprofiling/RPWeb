@@ -1,0 +1,376 @@
+@import play.api.libs.json.JsValue
+
+@(pubs: Array[List[Publication]])(grants: Array[List[Grant]])
+
+@if(pubs.length > 0) {
+    <!--suppress ALL -->
+    <h1>Publications</h1>
+    <script>
+        var lastLinkedPub = null;
+    </script>
+    @for(group <- pubs) {
+        @if(group != null && group.nonEmpty) {
+            <h2>@if(pubs.indexOf(group)==pubs.size-1) {
+                Possibly Irrelevant
+            }else{
+                Visualisation Group @pubs.indexOf(group)
+            }</h2>
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Publisher</th>
+                        <th>Year</th>
+                        <th>Authors</th>
+                        <th>Affiliation</th>
+                        <th>Citations</th>
+                        <th>Relevance</th>
+                        <th>Base Records</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @for(rec <- group) {
+                    @rec match {
+                        case Publication(nameSearched, affiliationSearched, title, authors, publisher, year, affiliation, citation, _) => {
+                            <tr>
+                                <td>@title</td>
+                                <td>@publisher</td>
+                                <td>@if(year.isDefined){@year}</td>
+                                <td>@authors</td>
+                                <td>@affiliation</td>
+                                <td>@if(citation.isDefined){@citation}</td>
+                                <td><a class="btn btn-small" onclick="feedbackPub('@nameSearched', '@affiliationSearched', '@title', '@authors', '@publisher', @if(year.isDefined){
+                                        @year.get
+                                        }else{
+                                        undefined
+                                        }, '@affiliation', @if(citation.isDefined){
+                                        @citation.get
+                                        }else{
+                                        undefined
+                                        });">feedback</a></td>
+                                <td><script>
+                                function breakpub_g@pubs.indexOf(group)_r@group.indexOf(rec) () {
+                                    var r1 = null;
+                                    var r2 = null;
+                                    @for(i <- rec.origRecords.indices) {
+                                        @for(j <- i+1 until rec.origRecords.size) {
+                                            r1 = {};
+                                            @if(rec.origRecords(i).asInstanceOf[Publication].title.isDefined) {r1.title = '@rec.origRecords(i).asInstanceOf[Publication].title.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(i).asInstanceOf[Publication].publisher.isDefined) {r1.publisher = '@rec.origRecords(i).asInstanceOf[Publication].publisher.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(i).asInstanceOf[Publication].year.isDefined) {r1.year = @rec.origRecords(i).asInstanceOf[Publication].year.get;}
+                                            @if(rec.origRecords(i).asInstanceOf[Publication].authors.isDefined) {r1.authors = '@rec.origRecords(i).asInstanceOf[Publication].authors.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(i).asInstanceOf[Publication].affiliation.isDefined) {r1.affiliation = '@rec.origRecords(i).asInstanceOf[Publication].affiliation.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(i).asInstanceOf[Publication].citation.isDefined) {r1.citation = @rec.origRecords(i).asInstanceOf[Publication].citation.get;}
+                                            r2 = {};
+                                            @if(rec.origRecords(j).asInstanceOf[Publication].title.isDefined) {r2.title = '@rec.origRecords(j).asInstanceOf[Publication].title.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(j).asInstanceOf[Publication].publisher.isDefined) {r2.publisher = '@rec.origRecords(j).asInstanceOf[Publication].publisher.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(j).asInstanceOf[Publication].year.isDefined) {r2.year = @rec.origRecords(j).asInstanceOf[Publication].year.get;}
+                                            @if(rec.origRecords(j).asInstanceOf[Publication].authors.isDefined) {r2.authors = '@rec.origRecords(j).asInstanceOf[Publication].authors.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(j).asInstanceOf[Publication].affiliation.isDefined) {r2.affiliation = '@rec.origRecords(j).asInstanceOf[Publication].affiliation.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(j).asInstanceOf[Publication].citation.isDefined) {r2.citation = @rec.origRecords(j).asInstanceOf[Publication].citation.get;}
+                                            request({
+                                                method: "POST",
+                                                uri: window.location.href + "/linkage/Publication",
+                                                json: {
+                                                    "r1": r1,
+                                                    "r2": r2,
+                                                    "link" : false
+                                                }
+                                            });
+                                        }
+                                    }
+                                    //  And refresh the list
+                                    document.getElementById("isSearch").value = true;
+                                    document.getElementById("inputForm").submit();
+                                };
+
+                                function linkpub_g@pubs.indexOf(group)_r@group.indexOf(rec) () {
+                                    if (lastLinkedPub == null) {
+                                        lastLinkedPub = [];
+                                        var r = null;
+                                        @for(origRec <- rec.origRecords) {
+                                        r = {};
+                                        @if(origRec.asInstanceOf[Publication].title.isDefined) {r.title = '@origRec.asInstanceOf[Publication].title.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Publication].publisher.isDefined) {r.publisher = '@origRec.asInstanceOf[Publication].publisher.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Publication].year.isDefined) {r.year = @origRec.asInstanceOf[Publication].year.get;}
+                                        @if(origRec.asInstanceOf[Publication].authors.isDefined) {r.authors = '@origRec.asInstanceOf[Publication].authors.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Publication].affiliation.isDefined) {r.affiliation = '@origRec.asInstanceOf[Publication].affiliation.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Publication].citation.isDefined) {r.citation = @origRec.asInstanceOf[Publication].citation.get;}
+                                        lastLinkedPub.push(r);
+                                        }
+                                    }
+                                    else {
+                                        var r = null;
+                                        @for(origRec <- rec.origRecords) {
+                                        r = {};
+                                        @if(origRec.asInstanceOf[Publication].title.isDefined) {r.title = '@origRec.asInstanceOf[Publication].title.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Publication].publisher.isDefined) {r.publisher = '@origRec.asInstanceOf[Publication].publisher.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Publication].year.isDefined) {r.year = @origRec.asInstanceOf[Publication].year.get;}
+                                        @if(origRec.asInstanceOf[Publication].authors.isDefined) {r.authors = '@origRec.asInstanceOf[Publication].authors.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Publication].affiliation.isDefined) {r.affiliation = '@origRec.asInstanceOf[Publication].affiliation.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Publication].citation.isDefined) {r.citation = @origRec.asInstanceOf[Publication].citation.get;}
+                                        lastLinkedPub.forEach(function(r1){
+                                            request({
+                                                method: "POST",
+                                                uri: window.location.href + "/linkage/Publication",
+                                                json: {
+                                                    "r1": r1,
+                                                    "r2": r,
+                                                    "link" : true
+                                                }
+                                            });
+                                        })
+                                        }
+                                        //  And refresh the list
+                                        document.getElementById("isSearch").value = true;
+                                        document.getElementById("inputForm").submit();
+                                    }
+                                };
+
+                                </script><a class="btn btn-small" onclick="breakOrLink(breakpub_g@pubs.indexOf(group)_r@group.indexOf(rec), linkpub_g@pubs.indexOf(group)_r@group.indexOf(rec), '@rec.origRecords.mkString("\t||||\t").replace("\n", "\t").replace("\'", "\\\'")');">@rec.origRecords.size</a></td>
+                            </tr>
+                        }
+                    }
+                }
+                </tbody>
+            </table>
+        }
+    }
+}
+
+@if(grants.length > 0) {
+    <h1>Grants</h1>
+    <script>
+        var lastLinkedGrant = null;
+    </script>
+    @for(group <- grants) {
+        @if(group != null && group.nonEmpty) {
+            <h2>@if(grants.indexOf(group)==grants.length-1) {
+                Possibly Irrelevant
+            }else{
+                Visualisation Group @grants.indexOf(group)
+            }</h2>
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Investigator</th>
+                        <th>Affiliation</th>
+                        <th>Agency</th>
+                        <th>Year</th>
+                        <th>Amount</th>
+                        <th>Relevance</th>
+                        <th>Base Records</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @for(rec <- group) {
+                    @rec match {
+                        case Grant(nameSearched, affiliationSearched, title, investigator, affiliation, agency, year, amount, _) => {
+                            <tr>
+                                <td>@title</td>
+                                <td>@investigator</td>
+                                <td>@affiliation</td>
+                                <td>@agency</td>
+                                <td>@if(year.isDefined){@year}</td>
+                                <td>@if(amount.isDefined){@amount}</td>
+                                <td><a class="btn btn-small" onclick="feedbackGrant('@nameSearched', '@affiliationSearched', '@title', '@investigator', '@affiliation', '@agency', @if(year.isDefined){
+                                        @year.get
+                                        }else{
+                                        undefined
+                                        }, @if(amount.isDefined){
+                                        @amount.get
+                                        }else{
+                                        undefined
+                                        });">feedback</a></td>
+                                <td><script>
+                                function breakgrant_g@grants.indexOf(group)_r@group.indexOf(rec) () {
+                                    var r1 = null;
+                                    var r2 = null;
+                                    @for(i <- rec.origRecords.indices) {
+                                        @for(j <- i+1 until rec.origRecords.size) {
+                                            r1 = {};
+                                            @if(rec.origRecords(i).asInstanceOf[Grant].title.isDefined) {r1.title = '@rec.origRecords(i).asInstanceOf[Grant].title.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(i).asInstanceOf[Grant].investigator.isDefined) {r1.investigator = '@rec.origRecords(i).asInstanceOf[Grant].investigator.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(i).asInstanceOf[Grant].year.isDefined) {r1.year = @rec.origRecords(i).asInstanceOf[Grant].year.get;}
+                                            @if(rec.origRecords(i).asInstanceOf[Grant].agency.isDefined) {r1.agency = '@rec.origRecords(i).asInstanceOf[Grant].agency.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(i).asInstanceOf[Grant].affiliation.isDefined) {r1.affiliation = '@rec.origRecords(i).asInstanceOf[Grant].affiliation.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(i).asInstanceOf[Grant].amount.isDefined) {r1.amount = @rec.origRecords(i).asInstanceOf[Grant].amount.get;}
+                                            r2 = {};
+                                            @if(rec.origRecords(j).asInstanceOf[Grant].title.isDefined) {r2.title = '@rec.origRecords(i).asInstanceOf[Grant].title.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(j).asInstanceOf[Grant].investigator.isDefined) {r2.investigator = '@rec.origRecords(i).asInstanceOf[Grant].investigator.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(j).asInstanceOf[Grant].year.isDefined) {r2.year = @rec.origRecords(i).asInstanceOf[Grant].year.get;}
+                                            @if(rec.origRecords(j).asInstanceOf[Grant].agency.isDefined) {r2.agency = '@rec.origRecords(i).asInstanceOf[Grant].agency.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(j).asInstanceOf[Grant].affiliation.isDefined) {r2.affiliation = '@rec.origRecords(i).asInstanceOf[Grant].affiliation.get.replace("\'", "\\\'")';}
+                                            @if(rec.origRecords(j).asInstanceOf[Grant].amount.isDefined) {r2.amount = @rec.origRecords(i).asInstanceOf[Grant].amount.get;}
+                                            request({
+                                                method: "POST",
+                                                uri: window.location.href + "/linkage/Grant",
+                                                json: {
+                                                    "r1": r1,
+                                                    "r2": r2,
+                                                    "link" : false
+                                                }
+                                            });
+                                        }
+                                    }
+                                    //  And refresh the list
+                                    document.getElementById("isSearch").value = true;
+                                    document.getElementById("inputForm").submit();
+                                };
+
+                                function linkgrant_g@grants.indexOf(group)_r@group.indexOf(rec) () {
+                                    if (lastLinkedGrant == null) {
+                                        lastLinkedGrant = [];
+                                        var r = null;
+                                        @for(origRec <- rec.origRecords) {
+                                        var r = {};
+                                        @if(origRec.asInstanceOf[Grant].title.isDefined) {r.title = '@origRec.asInstanceOf[Grant].title.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Grant].investigator.isDefined) {r.investigator = '@origRec.asInstanceOf[Grant].investigator.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Grant].year.isDefined) {r.year = @origRec.asInstanceOf[Grant].year.get;}
+                                        @if(origRec.asInstanceOf[Grant].agency.isDefined) {r.agency = '@origRec.asInstanceOf[Grant].agency.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Grant].affiliation.isDefined) {r.affiliation = '@origRec.asInstanceOf[Grant].affiliation.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Grant].amount.isDefined) {r.amount = @origRec.asInstanceOf[Grant].amount.get;}
+                                        lastLinkedGrant.push(r);
+                                        }
+                                    }
+                                    else {
+                                        var r = null;
+                                        @for(origRec <- rec.origRecords) {
+                                        r = {};
+
+                                        @if(origRec.asInstanceOf[Grant].title.isDefined) {r.title = '@origRec.asInstanceOf[Grant].title.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Grant].investigator.isDefined) {r.investigator = '@origRec.asInstanceOf[Grant].investigator.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Grant].year.isDefined) {r.year = @origRec.asInstanceOf[Grant].year.get;}
+                                        @if(origRec.asInstanceOf[Grant].agency.isDefined) {r.agency = '@origRec.asInstanceOf[Grant].agency.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Grant].affiliation.isDefined) {r.affiliation = '@origRec.asInstanceOf[Grant].affiliation.get.replace("\'", "\\\'")';}
+                                        @if(origRec.asInstanceOf[Grant].amount.isDefined) {r.amount = @origRec.asInstanceOf[Grant].amount.get;}
+                                        lastLinkedGrant.forEach(function(r1){
+                                            request({
+                                                method: "POST",
+                                                uri: window.location.href + "/linkage/Grant",
+                                                json: {
+                                                    "r1": r1,
+                                                    "r2": r,
+                                                    "link" : true
+                                                }
+                                            });
+                                        })
+                                        }
+                                        //  And refresh the list
+                                        document.getElementById("isSearch").value = true;
+                                        document.getElementById("inputForm").submit();
+                                    }
+                                };
+
+                                </script><a class="btn btn-small" onclick="breakOrLink(breakgrant_g@grants.indexOf(group)_r@group.indexOf(rec), linkgrant_g@grants.indexOf(group)_r@group.indexOf(rec), '@rec.origRecords.mkString("\t||||\t").replace("\n", "\t").replace("\'", "\\\'")');">@rec.origRecords.size</a>
+
+                                </td>
+                            </tr>
+                        }
+                    }
+                }
+                </tbody>
+            </table>
+        }
+    }
+
+}
+
+<div id="dialog-relevance" title="Is this record relevant?"></div>
+<div id="dialog-linkage" title="Do you want to break this or link it?"></div>
+<script>
+        function feedbackPub(nameSearched, affiliationSearched, title, authors, publisher, year, affiliation, citation) {
+            $("#dialog-relevance").dialog({
+                resizable: true,
+                modal: true,
+                buttons: {
+                    "Yes": function() {
+                        $( this ).dialog( "close" );
+                        request({
+                            method: "POST",
+                            uri: window.location.href + "/relevance/Publication",
+                            json: {
+                                "data": {"title" : title, "authors" : authors, "publisher" : publisher, "year" : year, "affiliation" : affiliation, "citation" : citation},
+                                "search": {"name": nameSearched, "affiliation": affiliationSearched},
+                                "relevant" : true
+                            }
+                        }, function (err, res, body) {
+                            window.alert("Feedback Provided!")
+                        });
+                    },
+                    "No": function() {
+                        $( this ).dialog( "close" );
+                        request({
+                            method: "POST",
+                            uri: window.location.href + "/relevance/Publication",
+                            json: {
+                                "data": {"title" : title, "authors" : authors, "publisher" : publisher, "year" : year, "affiliation" : affiliation, "citation" : citation},
+                                "search": {"name": nameSearched, "affiliation": affiliationSearched},
+                                "relevant" : false
+                            }
+                        }, function (err, res, body) {
+                            window.alert("Feedback Provided!")
+                        });
+                    }
+                }
+            });
+        }
+
+        function feedbackGrant (nameSearched, affiliationSearched, title, investigator, affiliation, agency, year, amount) {
+            $("#dialog-relevance").dialog({
+                resizable: true,
+                modal: true,
+                buttons: {
+                    "Yes": function() {
+                        $( this ).dialog( "close" );
+                        request({
+                            method: "POST",
+                            uri: window.location.href + "/relevance/Grant",
+                            json: {
+                                "data": {"title" : title, "investigator" : investigator, "affiliation" : affiliation, "agency" : agency, "year" : year, "amount" : amount},
+                                "search": {"name": nameSearched, "affiliation": affiliationSearched},
+                                "relevant" : true
+                            }
+                        }, function (err, res, body) {
+                            window.alert("Feedback Provided!")
+                        });
+                    },
+                    "No": function() {
+                        $( this ).dialog( "close" );
+                        request({
+                            method: "POST",
+                            uri: window.location.href + "/relevance/Grant",
+                            json: {
+                                "data": {"title" : title, "investigator" : investigator, "affiliation" : affiliation, "agency" : agency, "year" : year, "amount" : amount},
+                                "search": {"name": nameSearched, "affiliation": affiliationSearched},
+                                "relevant" : false
+                            }
+                        }, function (err, res, body) {
+                            window.alert("Feedback Provided!")
+                        });
+                    }
+                }
+            });
+        }
+
+        function breakOrLink(breakCallback, linkCallback, origRecords) {
+            document.getElementById("dialog-linkage").textContent = origRecords;
+            $("#dialog-linkage").dialog({
+                resizable: true,
+                modal: true,
+                buttons: {
+                    "Break": function() {
+                        $( this ).dialog( "close" );
+                        breakCallback()
+                    },
+                    "Link": function() {
+                        $( this ).dialog( "close" );
+                        linkCallback()
+                    }
+                }
+            });
+
+        }
+</script>
+

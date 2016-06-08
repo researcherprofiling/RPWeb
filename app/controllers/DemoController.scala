@@ -176,12 +176,12 @@ class DemoController @Inject() (db : Database) extends Controller {
         val recs : List[Grant] = recsOpt.get.map(NSF(search, _))
         val conn = db.getConnection()
         conn.setAutoCommit(false)
-        val deleteStmt = conn.prepareStatement("DELETE FROM grant WHERE name_searched = ? AND affiliation_searched = ? AND source = ?;")
+        val deleteStmt = conn.prepareStatement("DELETE FROM grants WHERE name_searched = ? AND affiliation_searched = ? AND source = ?;")
         deleteStmt.setString(1, (search \ "name").as[String])
         deleteStmt.setString(2, (search \ "affiliation").as[String])
         deleteStmt.setString(3, "NSF")
         deleteStmt.executeUpdate()
-        val stmt = conn.prepareStatement("INSERT INTO GRANT (NAME_SEARCHED ,AFFILIATION_SEARCHED ,TITLE ,INVESTIGATOR , AFFILIATION, AGENCY ,YEAR ,AMOUNT , SOURCE) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);")
+        val stmt = conn.prepareStatement("INSERT INTO grants (NAME_SEARCHED ,AFFILIATION_SEARCHED ,TITLE ,INVESTIGATOR , AFFILIATION, AGENCY ,YEAR ,AMOUNT , SOURCE) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);")
         recs foreach (grant => {
           //  Store into database
           stmt.setString(1, grant.nameSearched)

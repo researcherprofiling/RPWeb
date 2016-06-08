@@ -49,7 +49,7 @@ object Search {
     val conn = db.getConnection()
     var lst = List[Grant]()
     try {
-      val stmt = conn.prepareStatement("SELECT * FROM grant WHERE name_searched = ? AND affiliation_searched = ?;")
+      val stmt = conn.prepareStatement("SELECT * FROM grants WHERE name_searched = ? AND affiliation_searched = ?;")
       stmt.setString(1, search.name)
       stmt.setString(2, search.affiliation)
       val rs = stmt.executeQuery()

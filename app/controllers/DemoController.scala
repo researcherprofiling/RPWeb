@@ -22,7 +22,7 @@ class DemoController @Inject() (db : Database) extends Controller {
       views.html.demo(searchForm)
       (new Array[List[Publication]](0))
       (new Array[List[Grant]](0))
-      (new Array[List[Grant]](0))
+      (new Array[List[Patent]](0))
     ))
   }
 

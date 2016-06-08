@@ -30218,7 +30218,7 @@ JustiaSearch= function (fullName, affiliation, callBack,errCallBack){
         //}
     });
 };
-JustiaSearch("Dan Roth","UIUC",console.log,errCallBack);
+JustiaSearch("Dan Roth","UIUC",console.log,console.log);
 
 if(typeof(String.prototype.trim) === "undefined")
 {

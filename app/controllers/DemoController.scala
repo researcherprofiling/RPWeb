@@ -44,7 +44,6 @@ class DemoController @Inject() (db : Database) extends Controller {
       },
       search => {
         if (search.srch) {
-          print(searchGrant(search, db).length)
           Ok(views.html.main("Researcher Profiling Web App")(
             views.html.demo(searchForm.fill(search))(searchPublication(search, db))(searchGrant(search, db))
           ))
@@ -177,7 +176,7 @@ class DemoController @Inject() (db : Database) extends Controller {
         val recs : List[Grant] = recsOpt.get.map(NSF(search, _))
         val conn = db.getConnection()
         conn.setAutoCommit(false)
-        val deleteStmt = conn.prepareStatement("DELETE FROM GRANT WHERE NAME_SEARCHED = ? AND AFFILIATION_SEARCHED = ? AND SOURCE = ?;")
+        val deleteStmt = conn.prepareStatement("DELETE FROM grant WHERE name_searched = ? AND affiliation_searched = ? AND source = ?;")
         deleteStmt.setString(1, (search \ "name").as[String])
         deleteStmt.setString(2, (search \ "affiliation").as[String])
         deleteStmt.setString(3, "NSF")

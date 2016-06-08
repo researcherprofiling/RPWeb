@@ -2,11 +2,11 @@
 @import play.api.libs.json.JsNull
 @import models.Search
 
-@(searchForm : Form[Search])(pubs: Array[List[Publication]])(grants : Array[List[Grant]])(implicit messages: Messages)
+@(searchForm : Form[Search])(pubs: Array[List[Publication]])(grants : Array[List[Grant]])(patents: Array[List[Patent]])(implicit messages: Messages)
 
 @demoApp.inputs(searchForm)
 
-@demoApp.results(pubs)(grants)
+@demoApp.results(pubs)(grants)(patents)
 
 
 <script src="@routes.Assets.versioned("js/grabdata.js")"></script>

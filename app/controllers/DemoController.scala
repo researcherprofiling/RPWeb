@@ -22,6 +22,7 @@ class DemoController @Inject() (db : Database) extends Controller {
       views.html.demo(searchForm)
       (new Array[List[Publication]](0))
       (new Array[List[Grant]](0))
+      (new Array[List[Grant]](0))
     ))
   }
 
@@ -39,18 +40,18 @@ class DemoController @Inject() (db : Database) extends Controller {
     searchForm.bindFromRequest.fold(
       formWithErrors => {
         Ok(views.html.main("Researcher Profiling Web App")(
-          views.html.demo(searchForm)(new Array[List[Publication]](0))(new Array[List[Grant]](0))
+          views.html.demo(searchForm)(new Array[List[Publication]](0))(new Array[List[Grant]](0))(new Array[List[Patent]](0))
         ))
       },
       search => {
         if (search.srch) {
           Ok(views.html.main("Researcher Profiling Web App")(
-            views.html.demo(searchForm.fill(search))(searchPublication(search, db))(searchGrant(search, db))
+            views.html.demo(searchForm.fill(search))(searchPublication(search, db))(searchGrant(search, db))(searchPatent(search, db))
           ))
         }
         else if (search.refine) {
           Ok(views.html.main("Researcher Profiling Web App")(
-            views.html.demo(searchForm.fill(search))(searchPublication(search, db))(searchGrant(search, db))
+            views.html.demo(searchForm.fill(search))(searchPublication(search, db))(searchGrant(search, db))(searchPatent(search, db))
           ))
         }
         else BadRequest("Unrecognized post.")

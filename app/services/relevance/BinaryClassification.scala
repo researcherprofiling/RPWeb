@@ -19,6 +19,7 @@ object BinaryClassification {
     val dataSet =
       if (dataType == "Publication") publicationTrainingSet(publicationTrainingData(db, srch))
       else if (dataType == "Grant") grantTrainingSet(grantTrainingData(db, srch))
+      else if (dataType == "Patent") patentTrainingSet(patentTrainingData(db, srch))
       else new Instances("Empty", new FastVector(0), 0)
     if (dataSet.numInstances() == 0) {
       val ret = Array.fill[List[Record]](2)(List[Record]())
@@ -29,6 +30,7 @@ object BinaryClassification {
       val predictSet =
         if (dataType == "Publication") publicationTestingSet(recs.asInstanceOf[List[Publication]])
         else if (dataType == "Grant") grantTestingSet(recs.asInstanceOf[List[Grant]])
+        else if (dataType == "Patent") patentTestingSet(recs.asInstanceOf[List[Patent]])
         else new Instances("Empty", new FastVector(0), 0)
       try {
         val tokenizer : NGramTokenizer  = new NGramTokenizer();
@@ -313,6 +315,133 @@ object BinaryClassification {
         inst.setMissing(4)
       if (rec.amount.isDefined)
         inst.setValue(5, rec.amount.get)
+      else
+        inst.setMissing(5)
+      ret.add(inst)
+    }
+    ret
+  }
+
+  def patentTrainingData(db : Database, search: Search) : List[(Patent, Boolean)] = {
+    val conn = db.getConnection()
+    var lst = List[(Patent, Boolean)]()
+    try {
+      val stmt = conn.prepareStatement("SELECT * FROM patent_relevance WHERE name_searched = ? AND affiliation_searched = ?;")
+      stmt.setString(1, search.name)
+      stmt.setString(2, search.affiliation)
+      val rs = stmt.executeQuery()
+      while (rs.next()) {
+        lst ::= (Patent(
+          search.name,
+          search.affiliation,
+          Some(rs.getString("title")),
+          Some(rs.getString("inventor")),
+          Some(rs.getString("filed")),
+          Some(rs.getString("issued")),
+          Some(rs.getString("patentNum")),
+          Some(rs.getString("asignee")),
+          None
+        ), rs.getBoolean("relevant"))
+      }
+    } finally {
+      conn.close()
+    }
+    lst
+  }
+
+  def patentTrainingSet(recs : List[(Patent, Boolean)]) : Instances = {
+    //  Build data set & schema
+    val attrs : FastVector = new FastVector(7)
+    attrs.addElement(new Attribute("FIELD: TITLE", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: INVENTOR", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: FILED", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ISSUED", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: PATENTNUM", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ASIGNEE", null.asInstanceOf[FastVector]))
+    val classValues : FastVector = new FastVector(2)
+    classValues.addElement("positive")
+    classValues.addElement("negative")
+    val classLabel : Attribute = new Attribute("CLASS LABEL", classValues)
+    attrs.addElement(classLabel)
+    val ret = new Instances("dataSet", attrs, recs.size)
+    ret.setClass(classLabel)
+    //  Build specific record
+    for (pair <- recs) {
+      val pub = pair._1
+      val inst = new Instance(7)
+      inst.setDataset(ret)
+      if (pub.title.isDefined)
+        inst.setValue(0, pub.title.get)
+      else
+        inst.setMissing(0)
+      if (pub.inventor.isDefined)
+        inst.setValue(1, pub.inventor.get)
+      else
+        inst.setMissing(1)
+      if (pub.filed.isDefined)
+        inst.setValue(2, pub.filed.get)
+      else
+        inst.setMissing(2)
+      if (pub.issued.isDefined)
+        inst.setValue(3, pub.issued.get)
+      else
+        inst.setMissing(3)
+      if (pub.patentNum.isDefined)
+        inst.setValue(4, pub.patentNum.get)
+      else
+        inst.setMissing(4)
+      if (pub.asignee.isDefined)
+        inst.setValue(5, pub.asignee.get)
+      else
+        inst.setMissing(5)
+      inst.setClassValue(if (pair._2) "positive" else "negative")
+      ret.add(inst)
+    }
+    ret
+  }
+
+  def patentTestingSet(recs : List[Patent]) : Instances = {
+    //  Build data set & schema
+    val attrs : FastVector = new FastVector(7)
+    attrs.addElement(new Attribute("FIELD: TITLE", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: INVENTOR", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: FILED", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ISSUED", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: PATENTNUM", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ASIGNEE", null.asInstanceOf[FastVector]))
+    val classValues : FastVector = new FastVector(2)
+    classValues.addElement("positive")
+    classValues.addElement("negative")
+    val classLabel : Attribute = new Attribute("CLASS LABEL", classValues)
+    attrs.addElement(classLabel)
+    val ret = new Instances("dataSet", attrs, recs.size)
+    ret.setClass(classLabel)
+    //  Build specific record
+    for (rec <- recs) {
+      val inst = new Instance(7)
+      inst.setDataset(ret)
+      if (rec.title.isDefined)
+        inst.setValue(0, rec.title.get)
+      else
+        inst.setMissing(0)
+      if (rec.inventor.isDefined)
+        inst.setValue(1, rec.inventor.get)
+      else
+        inst.setMissing(1)
+      if (rec.filed.isDefined)
+        inst.setValue(2, rec.filed.get)
+      else
+        inst.setMissing(2)
+      if (rec.issued.isDefined)
+        inst.setValue(3, rec.issued.get)
+      else
+        inst.setMissing(3)
+      if (rec.patentNum.isDefined)
+        inst.setValue(4, rec.patentNum.get)
+      else
+        inst.setMissing(4)
+      if (rec.asignee.isDefined)
+        inst.setValue(5, rec.asignee.get)
       else
         inst.setMissing(5)
       ret.add(inst)

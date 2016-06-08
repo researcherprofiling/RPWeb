@@ -19,6 +19,7 @@ object KMeans {
     val dataSet =
       if (dataType == "Publication") publicationDataset(recs.asInstanceOf[List[Publication]])
       else if (dataType == "Grant") grantDataset(recs.asInstanceOf[List[Grant]])
+      else if (dataType == "Patent") patentDataset(recs.asInstanceOf[List[Patent]])
       else new Instances("Empty", new FastVector(0), 0)
     if (dataSet.numInstances() == 0) new Array[List[Record]](0)
     else {
@@ -140,6 +141,54 @@ object KMeans {
         inst.setValue(5, rec.amount.get)
       else
         inst.setMissing(5)
+      ret.add(inst)
+    }
+    ret
+  }
+
+  def patentDataset(recs : List[Patent]) : Instances = {
+    //  Build data set & schema
+    val attrs : FastVector = new FastVector(7)
+    attrs.addElement(new Attribute("FIELD: TITLE", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: INVENTOR", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: FILED", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ISSUED", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: PATENTNUM", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ASIGNEE", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ABSTRACT", null.asInstanceOf[FastVector]))
+    val ret = new Instances("dataSet", attrs, recs.size)
+    //  Build specific record
+    for (rec <- recs) {
+      val inst = new Instance(7)
+      inst.setDataset(ret)
+      if (rec.title.isDefined)
+        inst.setValue(0, rec.title.get)
+      else
+        inst.setMissing(0)
+      if (rec.inventor.isDefined)
+        inst.setValue(1, rec.inventor.get)
+      else
+        inst.setMissing(1)
+      if (rec.filed.isDefined)
+        inst.setValue(2, rec.filed.get)
+      else
+        inst.setMissing(2)
+      if (rec.issued.isDefined)
+        inst.setValue(3, rec.issued.get)
+      else
+        inst.setMissing(3)
+      if (rec.patentNum.isDefined)
+        inst.setValue(4, rec.patentNum.get)
+      else
+        inst.setMissing(4)
+      if (rec.asignee.isDefined)
+        inst.setValue(5, rec.asignee.get)
+      else
+        inst.setMissing(5)
+      if (rec.description.isDefined)
+        inst.setValue(6, rec.description.get)
+      else
+        inst.setMissing(6)
       ret.add(inst)
     }
     ret

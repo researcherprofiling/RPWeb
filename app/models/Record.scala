@@ -49,8 +49,8 @@ case class Grant (nameSearched : String, affiliationSearched : String,
 
 case class Patent (nameSearched : String, affiliationSearched : String,
                    title : Option[String], inventor : Option[String], filed : Option[String],
-                   issued : Option[String], patentNum : Option[Int], asignee : Option[Long],
-                   addThis : Boolean = true) extends Record(nameSearched, affiliationSearched, addThis)
+                   issued : Option[String], patentNum : Option[String], asignee : Option[String],
+                   description : Option[String], addThis : Boolean = true) extends Record(nameSearched, affiliationSearched, addThis)
 {
   override lazy val toString : String = {
     var temp = ""
@@ -60,6 +60,7 @@ case class Patent (nameSearched : String, affiliationSearched : String,
     if (issued.isDefined) temp += "Issued: " + issued.get + "\n"
     if (patentNum.isDefined) temp += "Application/Patent Number: " + patentNum.get + "\n"
     if (asignee.isDefined) temp += "Asignee: " + asignee.get + "\n"
+    if (description.isDefined) temp += "Abstract: " + description.get + "\n"
     temp
   }
 }

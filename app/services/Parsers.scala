@@ -1,6 +1,6 @@
 package services
 
-import models.{Grant, Search, Publication}
+import models._
 import play.api.libs.json.JsValue
 
 object Parsers {
@@ -91,4 +91,37 @@ object Parsers {
     (jsValue \ "amount").asOpt[JsValue].map(value => value.as[Long])
   )
 
+  /*
+  * Grants:
+  *  1. Title
+  *  2. Inventor
+  *  3. Filed
+  *  4. Issued
+  *  5. Patent Number
+  *  6. Asignee
+  *  7. Abstract
+  * */
+  def Justia (search: JsValue, jsValue: JsValue) : Patent = Patent (
+    if (search == null ) "" else (search \ "name").as[String],
+    if (search == null ) "" else (search \ "affiliation").as[String],
+    (jsValue \ "title").asOpt[JsValue].map(value => value.as[String]),
+    (jsValue \ "inventors").asOpt[JsValue].map(value => value.as[String]),
+    (jsValue \ "filed").asOpt[JsValue].map(value => value.as[String]),
+    (jsValue \ "date").asOpt[JsValue].map(value => value.as[String]),
+    (jsValue \ "number").asOpt[JsValue].map(value => value.as[String]),
+    None,
+    (jsValue \ "abstract").asOpt[JsValue].map(value => value.as[String])
+  )
+
+  def StandardPatent (search: JsValue, jsValue: JsValue) : Patent = Patent (
+    if (search == null ) "" else (search \ "name").as[String],
+    if (search == null ) "" else (search \ "affiliation").as[String],
+    (jsValue \ "title").asOpt[JsValue].map(value => value.as[String]),
+    (jsValue \ "inventors").asOpt[JsValue].map(value => value.as[String]),
+    (jsValue \ "filed").asOpt[JsValue].map(value => value.as[String]),
+    (jsValue \ "issued").asOpt[JsValue].map(value => value.as[String]),
+    (jsValue \ "patentNum").asOpt[JsValue].map(value => value.as[String]),
+    (jsValue \ "asignee").asOpt[JsValue].map(value => value.as[String]),
+    (jsValue \ "abstract").asOpt[JsValue].map(value => value.as[String])
+  )
 }

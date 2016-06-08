@@ -200,6 +200,40 @@ class DemoController @Inject() (db : Database) extends Controller {
       }
       Ok("Updated.")
     }
+    else if (src == "Justia") {
+      val recsOpt : Option[List[JsValue]] = request.body.asJson.map(_ \ "data").map(_.as[List[JsValue]])
+      val searchOpt : Option[JsValue] = request.body.asJson.map(_ \ "search" get)
+      if (searchOpt.isEmpty || (searchOpt.get \ "name").asOpt[String].isEmpty || (searchOpt.get \ "affiliation").asOpt[String].isEmpty ) BadRequest("Empty search.")
+      else if (recsOpt.isDefined) {
+        val search = searchOpt.get
+        val recs : List[Patent] = recsOpt.get.map(Justia(search, _))
+        val conn = db.getConnection()
+        conn.setAutoCommit(false)
+        val deleteStmt = conn.prepareStatement("DELETE FROM patent WHERE name_searched = ? AND affiliation_searched = ? AND source = ?;")
+        deleteStmt.setString(1, (search \ "name").as[String])
+        deleteStmt.setString(2, (search \ "affiliation").as[String])
+        deleteStmt.setString(3, "Justia")
+        deleteStmt.executeUpdate()
+        val stmt = conn.prepareStatement("INSERT INTO patent (NAME_SEARCHED ,AFFILIATION_SEARCHED ,TITLE ,INVENTOR , FILED, ISSUED,PATENTNUM ,ASSIGNEE, ABSTRACT , SOURCE) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);")
+        recs foreach (patent => {
+          //  Store into database
+          stmt.setString(1, patent.nameSearched)
+          stmt.setString(2, patent.affiliationSearched)
+          stmt.setString(3, patent.title.getOrElse(""))
+          stmt.setString(4, patent.inventor.getOrElse(""))
+          stmt.setString(5, patent.filed.getOrElse(""))
+          stmt.setString(6, patent.issued.getOrElse(""))
+          stmt.setString(7, patent.patentNum.getOrElse(""))
+          stmt.setString(8, patent.asignee.getOrElse(""))
+          stmt.setString(9, patent.description.getOrElse(""))
+          stmt.setString(10, "Justia")
+          stmt.execute()
+        })
+        conn.commit()
+        conn.close()
+      }
+      Ok("Updated.")
+    }
     else BadRequest("Unrecognized post.")
   }
 
@@ -270,6 +304,43 @@ class DemoController @Inject() (db : Database) extends Controller {
         stmt.setString(6, grant.agency.getOrElse(""))
         stmt.setInt(7, grant.year.getOrElse(-1))
         stmt.setLong(8, grant.amount.getOrElse(-1))
+        stmt.setBoolean(9, relevant)
+        stmt.executeUpdate()
+        conn.commit()
+        conn.close()
+        Ok("Feedback cached!")
+      }
+      else BadRequest("Unrecognized post.")
+    }
+    else if (aspect == "Patent") {
+      val dataOpt : Option[JsValue] = request.body.asJson.map(_ \ "data" get)
+      val searchOpt : Option[JsValue] = request.body.asJson.map(_ \ "search" get)
+      val relevantOpt : Option[JsValue] = request.body.asJson.map(_ \ "relevant" get)
+      if (searchOpt.isEmpty || (searchOpt.get \ "name").asOpt[String].isEmpty || (searchOpt.get \ "affiliation").asOpt[String].isEmpty ) BadRequest("Empty search.")
+      else if (dataOpt.isDefined && relevantOpt.isDefined) {
+        val relevant = relevantOpt.get.as[Boolean]
+        val grant = StandardPatent(searchOpt.get, dataOpt.get)
+        val conn = db.getConnection()
+        var stmt = conn.prepareStatement("DELETE FROM PATENT_RELEVANCE WHERE NAME_SEARCHED = ? AND AFFILIATION_SEARCHED = ? AND TITLE = ? AND INVENTOR = ? AND FILED = ? AND ISSUED = ? AND PATENTNUM = ? AND ASIGNEE = ? AND RELEVANT = ?;")
+        stmt.setString(1, grant.nameSearched)
+        stmt.setString(2, grant.affiliationSearched)
+        stmt.setString(3, grant.title.getOrElse(""))
+        stmt.setString(4, grant.inventor.getOrElse(""))
+        stmt.setString(5, grant.filed.getOrElse(""))
+        stmt.setString(6, grant.issued.getOrElse(""))
+        stmt.setString(7, grant.patentNum.getOrElse(""))
+        stmt.setString(8, grant.asignee.getOrElse(""))
+        stmt.setBoolean(9, !relevant)
+        stmt.executeUpdate()
+        stmt = conn.prepareStatement("INSERT INTO GRANT_RELEVANCE (NAME_SEARCHED ,AFFILIATION_SEARCHED ,TITLE ,INVENTOR ,FILED,ISSUED,PATENTNUM,ASIGNEE, RELEVANT) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);")
+        stmt.setString(1, grant.nameSearched)
+        stmt.setString(2, grant.affiliationSearched)
+        stmt.setString(3, grant.title.getOrElse(""))
+        stmt.setString(4, grant.inventor.getOrElse(""))
+        stmt.setString(5, grant.filed.getOrElse(""))
+        stmt.setString(6, grant.issued.getOrElse(""))
+        stmt.setString(7, grant.patentNum.getOrElse(""))
+        stmt.setString(8, grant.asignee.getOrElse(""))
         stmt.setBoolean(9, relevant)
         stmt.executeUpdate()
         conn.commit()

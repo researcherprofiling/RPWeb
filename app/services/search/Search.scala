@@ -1,6 +1,6 @@
 package services.search
 
-import models.{Grant, Search, Record, Publication}
+import models._
 import play.api.db._
 import services.grouping.KMeans
 import services.relevance.BinaryClassification
@@ -80,6 +80,45 @@ object Search {
         else p1.amount.getOrElse((-1).asInstanceOf[Long]) < p2.amount.getOrElse((-1).asInstanceOf[Long])
       }))
     grouped :+ rel(1).asInstanceOf[List[Grant]]
+  }
+
+  def searchPatent(search: Search, db : Database) : Array[List[Patent]] = {
+    val conn = db.getConnection()
+    var lst = List[Patent]()
+    try {
+      val stmt = conn.prepareStatement("SELECT * FROM patent WHERE name_searched = ? AND affiliation_searched = ?;")
+      stmt.setString(1, search.name)
+      stmt.setString(2, search.affiliation)
+      val rs = stmt.executeQuery()
+      while (rs.next()) {
+        lst ::= Patent(
+          search.name,
+          search.affiliation,
+          Some(rs.getString("title")),
+          Some(rs.getString("inventor")),
+          Some(rs.getString("filed")),
+          Some(rs.getString("issued")),
+          Some(rs.getString("patentNum")),
+          Some(rs.getString("asignee")),
+          Some(rs.getString("abstract"))
+        )
+      }
+    } finally {
+      conn.close()
+    }
+    lst = LeanredPairwiseMergability.link(lst, "Patent", db).map(rec => rec.asInstanceOf[Patent])
+    val rel = BinaryClassification.predictRelevance(lst, "Patent", search, db)
+    val grouped = KMeans.group(rel(0), "Patent").asInstanceOf[Array[List[Patent]]]
+      .map(_.sortWith((p1,p2) => {
+        if (p1.title.getOrElse("").compareTo(p2.title.getOrElse("")) != 0) p1.title.getOrElse("").compareTo(p2.title.getOrElse("")) < 0
+        else if (p1.inventor.getOrElse("").compareTo(p2.inventor.getOrElse("")) != 0) p1.inventor.getOrElse("").compareTo(p2.inventor.getOrElse("")) < 0
+        else if (p1.filed.getOrElse("").compareTo(p2.filed.getOrElse("")) != 0) p1.filed.getOrElse("").compareTo(p2.filed.getOrElse("")) < 0
+        else if (p1.issued.getOrElse("").compareTo(p2.issued.getOrElse("")) != 0) p1.issued.getOrElse("").compareTo(p2.issued.getOrElse("")) < 0
+        else if (p1.patentNum.getOrElse("").compareTo(p2.patentNum.getOrElse("")) != 0) p1.patentNum.getOrElse("").compareTo(p2.patentNum.getOrElse("")) < 0
+        else if (p1.asignee.getOrElse("").compareTo(p2.asignee.getOrElse("")) != 0) p1.asignee.getOrElse("").compareTo(p2.asignee.getOrElse("")) < 0
+        else p1.description.getOrElse("").compareTo(p2.description.getOrElse("")) < 0
+      }))
+    grouped :+ rel(1).asInstanceOf[List[Patent]]
   }
 
 }

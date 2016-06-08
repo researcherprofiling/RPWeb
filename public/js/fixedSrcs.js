@@ -4,9 +4,24 @@ var target = 100; // Arbitrary value
 searchButton = function (event) {
     event.preventDefault();
     finished = 0;
-    target = 4;
+    target = 5;
     var name = document.getElementById("nameInput").value;
     var aff = document.getElementById("affiliationInput").value;
+    JustiaSearch(name, aff, function(data) {
+        request({
+            method: "POST",
+            uri: window.location.href + "/update/Justia",
+            json: {
+                "data": data,
+                "search": {"name": name, "affiliation": aff}
+            }
+        }, function (err, res, body) {
+            console.log("Updated Justia");
+            submitSearch();
+        })
+    }, function (err) {
+        submitSearch();
+    });
     IEEESearch(name, aff, function(data) {
         request({
             method: "POST",

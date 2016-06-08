@@ -2,7 +2,7 @@ package services.recordLinkage
 
 import java.io.File
 
-import models.{Search, Grant, Publication, Record}
+import models._
 import play.api.db.Database
 import weka.classifiers.meta.FilteredClassifier
 import weka.classifiers.trees.RandomForest
@@ -17,6 +17,7 @@ object LeanredPairwiseMergability {
     val dataSet =
       if (dataType == "Publication") publicationTrainingSet(publicationTrainingData(db))
       else if (dataType == "Grant") grantTrainingSet(grantTrainingData(db))
+      else if (dataType == "Patent") patentTrainingSet(patentTrainingData(db))
       else new Instances("Empty", new FastVector(0), 0)
     if (dataSet.numInstances() == 0) {
       recs
@@ -25,6 +26,7 @@ object LeanredPairwiseMergability {
       val predictSet =
         if (dataType == "Publication") publicationTestingSet(recs.asInstanceOf[List[Publication]])
         else if (dataType == "Grant") grantTestingSet(recs.asInstanceOf[List[Grant]])
+        else if (dataType == "Patent") patentTestingSet(recs.asInstanceOf[List[Patent]])
         else new Instances("Empty", new FastVector(0), 0)
       try {
         val tokenizer : NGramTokenizer  = new NGramTokenizer()
@@ -475,6 +477,210 @@ object LeanredPairwiseMergability {
           inst.setMissing(10)
         if (grant2.amount.isDefined)
           inst.setValue(11, grant2.amount.get)
+        else
+          inst.setMissing(11)
+        ret.add(inst)
+      }
+
+    }
+    ret
+  }
+
+  def patentTrainingData (db : Database) : List[(Patent, Patent, Boolean)] = {
+    val conn = db.getConnection()
+    var lst = List[(Patent, Patent, Boolean)]()
+    try {
+      val stmt = conn.prepareStatement("SELECT * FROM patent_linkage;")
+      val rs = stmt.executeQuery()
+      while (rs.next()) {
+        lst ::= (Patent(
+          "",
+          "",
+          Some(rs.getString("TITLE1")),
+          Some(rs.getString("INVENTOR1")),
+          Some(rs.getString("FILED1")),
+          Some(rs.getString("ISSUED1")),
+          Some(rs.getString("PATENTNUM1")),
+          Some(rs.getString("ASIGNEE1")),
+          None
+        ),
+          Patent(
+            "",
+            "",
+            Some(rs.getString("TITLE2")),
+            Some(rs.getString("INVENTOR2")),
+            Some(rs.getString("FILED2")),
+            Some(rs.getString("ISSUED2")),
+            Some(rs.getString("PATENTNUM2")),
+            Some(rs.getString("ASIGNEE2")),
+            None
+          ),
+          rs.getBoolean("MERGABLE"))
+      }
+    } finally {
+      conn.close()
+    }
+    lst
+  }
+
+  def patentTrainingSet(patents : List[(Patent, Patent, Boolean)]) : Instances = {
+    //  Build data set & schema
+    val attrs : FastVector = new FastVector(13)
+    attrs.addElement(new Attribute("FIELD: TITLE1", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: INVENTOR1", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: FILED1", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ISSUED1", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: PATENTNUM1", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ASIGNEE1", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: TITLE2", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: INVENTOR2", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: FILED2", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ISSUED2", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: PATENTNUM2", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ASIGNEE2", null.asInstanceOf[FastVector]))
+    val classValues : FastVector = new FastVector(2)
+    classValues.addElement("positive")
+    classValues.addElement("negative")
+    val classLabel : Attribute = new Attribute("CLASS LABEL", classValues)
+    attrs.addElement(classLabel)
+    val ret = new Instances("dataSet", attrs, patents.size)
+    ret.setClass(classLabel)
+    //  Build specific record
+    for (pair <- patents) {
+      var p = pair._1
+      val inst = new Instance(13)
+      inst.setDataset(ret)
+      if (p.title.isDefined)
+        inst.setValue(0, p.title.get)
+      else
+        inst.setMissing(0)
+      if (p.inventor.isDefined)
+        inst.setValue(1, p.inventor.get)
+      else
+        inst.setMissing(1)
+      if (p.filed.isDefined)
+        inst.setValue(2, p.filed.get)
+      else
+        inst.setMissing(2)
+      if (p.issued.isDefined)
+        inst.setValue(3, p.issued.get)
+      else
+        inst.setMissing(3)
+      if (p.patentNum.isDefined)
+        inst.setValue(4, p.patentNum.get)
+      else
+        inst.setMissing(4)
+      if (p.asignee.isDefined)
+        inst.setValue(5, p.asignee.get)
+      else
+        inst.setMissing(5)
+      p = pair._2
+      if (p.title.isDefined)
+        inst.setValue(6, p.title.get)
+      else
+        inst.setMissing(6)
+      if (p.inventor.isDefined)
+        inst.setValue(7, p.inventor.get)
+      else
+        inst.setMissing(7)
+      if (p.filed.isDefined)
+        inst.setValue(8, p.filed.get)
+      else
+        inst.setMissing(8)
+      if (p.issued.isDefined)
+        inst.setValue(9, p.issued.get)
+      else
+        inst.setMissing(9)
+      if (p.patentNum.isDefined)
+        inst.setValue(10, p.patentNum.get)
+      else
+        inst.setMissing(10)
+      if (p.asignee.isDefined)
+        inst.setValue(11, p.asignee.get)
+      else
+        inst.setMissing(11)
+      inst.setClassValue(if (pair._3) "positive" else "negative")
+      ret.add(inst)
+    }
+    ret
+  }
+
+  def patentTestingSet(patents : List[Patent]): Instances = {
+    //  Build data set & schema
+    val attrs : FastVector = new FastVector(13)
+    attrs.addElement(new Attribute("FIELD: TITLE1", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: INVENTOR1", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: FILED1", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ISSUED1", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: PATENTNUM1", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ASIGNEE1", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: TITLE2", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: INVENTOR2", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: FILED2", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ISSUED2", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: PATENTNUM2", null.asInstanceOf[FastVector]))
+    attrs.addElement(new Attribute("FIELD: ASIGNEE2", null.asInstanceOf[FastVector]))
+    val classValues : FastVector = new FastVector(2)
+    classValues.addElement("positive")
+    classValues.addElement("negative")
+    val classLabel : Attribute = new Attribute("CLASS LABEL", classValues)
+    attrs.addElement(classLabel)
+    val ret = new Instances("dataSet", attrs, patents.size)
+    ret.setClass(classLabel)
+    //  Build specific record
+    val pub_arr : Array[Patent] = patents.toArray
+    for (i <- pub_arr.indices) {
+      for (j <- i + 1 until pub_arr.size) {
+        val inst = new Instance(13)
+        inst.setDataset(ret)
+        val grant1 = pub_arr(i)
+        val grant2 = pub_arr(j)
+        if (grant1.title.isDefined)
+          inst.setValue(0, grant1.title.get)
+        else
+          inst.setMissing(0)
+        if (grant1.inventor.isDefined)
+          inst.setValue(1, grant1.inventor.get)
+        else
+          inst.setMissing(1)
+        if (grant1.filed.isDefined)
+          inst.setValue(2, grant1.filed.get)
+        else
+          inst.setMissing(2)
+        if (grant1.issued.isDefined)
+          inst.setValue(3, grant1.issued.get)
+        else
+          inst.setMissing(3)
+        if (grant1.patentNum.isDefined)
+          inst.setValue(4, grant1.patentNum.get)
+        else
+          inst.setMissing(4)
+        if (grant1.asignee.isDefined)
+          inst.setValue(5, grant1.asignee.get)
+        else
+          inst.setMissing(5)
+        if (grant2.title.isDefined)
+          inst.setValue(6, grant2.title.get)
+        else
+          inst.setMissing(6)
+        if (grant2.inventor.isDefined)
+          inst.setValue(7, grant2.inventor.get)
+        else
+          inst.setMissing(7)
+        if (grant2.filed.isDefined)
+          inst.setValue(8, grant2.filed.get)
+        else
+          inst.setMissing(8)
+        if (grant2.issued.isDefined)
+          inst.setValue(9, grant2.issued.get)
+        else
+          inst.setMissing(9)
+        if (grant2.patentNum.isDefined)
+          inst.setValue(10, grant2.patentNum.get)
+        else
+          inst.setMissing(10)
+        if (grant2.asignee.isDefined)
+          inst.setValue(11, grant2.asignee.get)
         else
           inst.setMissing(11)
         ret.add(inst)

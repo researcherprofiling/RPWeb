@@ -30190,7 +30190,6 @@ JustiaSearch= function (fullName, affiliation, callBack,errCallBack){
     request({url:"http://patents.justia.com/search", qs:propertiesObject}, function(err, response, body) {
         if(err) { errCallBack(err); }
         var curr = cheerio.load(body);
-        console.log(curr)
         var results = curr("#search-results").find(".result");
         var res = [];
         for (var i = 0; i<results.length;i++) {
@@ -30218,7 +30217,7 @@ JustiaSearch= function (fullName, affiliation, callBack,errCallBack){
         //}
     });
 };
-JustiaSearch("Dan Roth","UIUC",console.log,console.log);
+// JustiaSearch("Dan Roth","UIUC",console.log,console.log);
 
 if(typeof(String.prototype.trim) === "undefined")
 {
